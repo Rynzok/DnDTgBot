@@ -13,11 +13,9 @@ def write_to_db(name, command, list_cast):
                    "string TEXT NOT NULL,"
                    "count INTEGER NOT NULL,"
                    "facets INTEGER NOT NULL,"
-                   "bomb INTEGER NOT NULL,"
+                   "advantage BOOL NOT NULL,"
+                   "hindrance BOOL NOT NULL,"
                    "mod INTEGER NOT NULL,"
-                   "multi INTEGER NOT NULL,"
-                   "resist INTEGER NOT NULL,"
-                   "percent INTEGER NOT NULL,"
                    "Alias_id INTEGER NOT NULL,"
                    "FOREIGN KEY (Alias_id) REFERENCES Alias (id))")
 
@@ -25,11 +23,10 @@ def write_to_db(name, command, list_cast):
     cursor.execute("SELECT LAST_INSERT_ROWID()")
     alias_id = cursor.fetchone()
     for cast in list_cast:
-        cursor.execute("INSERT INTO Casts (string, count, facets, bomb, mod, multi, resist, percent, Alias_id)"
-                       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                       (cast.command, cast.dict_values['count'], cast.dict_values['facets'], cast.dict_values['bomb'],
-                        cast.dict_values['mod'], cast.dict_values['multi'], cast.dict_values['resist'],
-                        cast.dict_values['percent'], alias_id[0]))
+        cursor.execute("INSERT INTO Casts (string, count, facets, advantage, hindrance, mod, Alias_id)"
+                       " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                       (cast.command, cast.dict_values['count'], cast.dict_values['facets'], cast.dict_values['advantage'],
+                        cast.dict_values['hindrance'], cast.dict_values['mod'], alias_id[0]))
 
     connection.commit()
     connection.close()
