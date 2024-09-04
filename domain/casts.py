@@ -8,14 +8,42 @@ class Cast:
         self.command = string
 
     def create_from_string(self):
-        # Символы, которые мы ищем в строке
-        list_symbols = ['d', 'a', 'h', '+', '-']
+        # Елси это просто d
+        if self.command == 'd':
+            return
+
+        list_symbols = ['a', 'h', '+', '-']
         # Список символов, которые мы найдём
         # list_characters = []
         # Список колючей по символам, которые мы наёдём в строке
-        list_key = ['count', 'facets']
+        # list_key = ['count', 'facets']
 
-        # Получаем список ключевых символов котороые есть в строке
+        # Находим количество бросаемых кубов
+        if self.command.find('d') != 0:
+            i = 0
+            d = ''
+            while i < self.command.find('d'):
+                d += ''.join(self.command[i])
+                i += 1
+
+            self.dict_values['count'] = int(d)
+
+
+        # Находим количество граней кубов
+        i = self.command.find('d') + 1
+        if i < len(self.command):
+            f = ''
+            while self.command[i] not in list_symbols:
+                f += ''.join(self.command[i])
+                i += 1
+                if i == len(self.command):
+                    break
+
+            if f != '':
+                self.dict_values['facets'] = int(f)
+
+
+        # Поиск ключевых сиволов и добавление их значений
         for i in list_symbols:
             if self.command.find(i) != -1:
                 # list_characters.append(i)
@@ -23,23 +51,21 @@ class Cast:
                     self.dict_values['advantage'] = True
                 elif i == 'h':
                     self.dict_values['hindrance'] = True
-                elif i == '+' or i == '-':
-                    list_key.append('mod')
 
+                elif i == '+':
+                    x = self.command.find(i) + 1
+                    y = ''
+                    for j in range( x ,len(self.command)):
+                        y += ''.join(self.command[j])
+                    self.dict_values['mod'] = int(y)
 
+                elif i == '-':
+                    x = self.command.find(i) + 1
+                    y = ''
+                    for j in range( x ,len(self.command)):
+                        y += ''.join(self.command[j])
+                    self.dict_values['mod'] = -int(y)
 
-
-        # list_characters.append('z')
-        string = self.command
-
-        buff = ""
-        j = 0
-        for i in range(len(string)):
-            buff += string[i]
-            if buff[-1] == list_characters[j]:
-                self.set_values(list_key[j], buff[:-1])
-                j += 1
-                buff = ""
 
     def create_from_db(self, list_tuple):
         keys = []
@@ -49,52 +75,27 @@ class Cast:
         for i in range(len(keys)):
             self.dict_values[keys[i]] = list_tuple[i + 2]
 
-    # def set_values(self, key, value):
-    #     if value != '':
-    #         self.dict_values[key] = int(value)
-    #     else:
-    #         if key == 'count':
-    #             self.dict_values[key] = 1
-    #         elif key == 'facets':
-    #             self.dict_values[key] = 20
-    #         elif key == 'bomb':
-    #             self.dict_values[key] = 1
-    #         elif key == 'resist':
-    #             self.dict_values[key] = 1
-    #         elif key == 'multi':
-    #             self.dict_values[key] = 1
-    #         elif key == 'percent':
-    #             self.dict_values[key] = 1
-    #         else:
-    #             self.dict_values[key] = 0
 
     def calculation(self):
         cubes = [0 for _ in range(self.dict_values['count'])]
 
-        # if self.dict_values['percent'] == 1:
-        #     self.set_values('facets', 100)
-
         for i in range(self.dict_values['count']):
-            cubes[i] = randint(0, self.dict_values['facets'])
-            if i < self.dict_values['bomb'] and cubes[i] == self.dict_values['facets']:
-                cubes.append(randint(0, self.dict_values['facets']))
+            if self.dict_values['advantage']:
+                cubes[i] = max(randint(1, self.dict_values['facets']), randint(1, self.dict_values['facets']))
+            elif self.dict_values['hindrance']:
+                cubes[i] = min(randint(1, self.dict_values['facets']), randint(1, self.dict_values['facets']))
+            else:
+                cubes[i] = randint(1, self.dict_values['facets'])
 
-        result = (sum(cubes) + self.dict_values['mod']) * self.dict_values['multi']
-        if self.dict_values['resist'] == 1:
-            result = result / 2
+        result = (sum(cubes) + self.dict_values['mod'])
 
         text_box = f"Бросок {self.command}: {result} ("
-        if self.dict_values['resist'] == 1:
-            text_box += "половина от "
         for i in cubes:
             text_box += str(i) + " + "
         if self.dict_values['mod'] != 0:
             text_box += str(self.dict_values['mod'])
         else:
-            text_box = text_box[:-2]
-        if self.dict_values['multi'] != 1:
-            text_box += f" помноженное на {self.dict_values['multi']})"
-        else:
-            text_box += ")"
+            text_box = text_box[:-3]
+        text_box += ")"
 
         return result, text_box
