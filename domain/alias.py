@@ -38,7 +38,7 @@ class Alias:
 
         text = f"Суммарный результат: {result} \n" + some_text
 
-        return text
+        return text, result
 
     def write_to_db(self):
         write_to_db(self.name, self.string, self.list_cast)
@@ -47,5 +47,5 @@ class Alias:
 def calculation_dice(string):
     command = Alias()
     command.create_from_string(string.split())
-    text_box = command.sum()
-    return text_box
+    text_box, res = command.sum()
+    return text_box, res

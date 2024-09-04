@@ -1,12 +1,14 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from help import manual
 from domain.heros import create_characteristic
 from domain.alias import calculation_dice
+import app.keyboards as kb
+from math import ceil
 
 router = Router()
-
+past_result = 0
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
@@ -30,7 +32,10 @@ async def get_cast(message: Message):
 
         # Оброботка всех бросков кубика
         elif str(msg).find('d') != -1:
-            await message.answer(calculation_dice(msg))
+            global past_result
+            text, past_result = calculation_dice(msg)
+
+            await message.answer(text, reply_markup=kb.main)
 
         # # Получение списка всез Алиасов
         # elif msg == 'alias' or msg == 'алиасы' or msg == 'al' or msg == 'ал':
@@ -55,4 +60,20 @@ async def get_cast(message: Message):
         # else:
         #     send_some_msg(id, f"{name}, Не попало в ifы")
 
-    await message.answer(f'У меня всё хорошо')
+    # await message.answer(f'У меня всё хорошо')
+
+
+@router.callback_query(F.data == 'division')
+async def division(callback: CallbackQuery):
+    await callback.answer('')
+    global past_result
+    past_result = ceil(past_result / 2)
+    await callback.message.edit_text(f'Новый резльтат: {past_result}', reply_markup=kb.main)
+
+
+@router.callback_query(F.data == 'multiplication')
+async def division(callback: CallbackQuery):
+    await callback.answer('')
+    global past_result
+    past_result = past_result * 2
+    await callback.message.edit_text(f'Новый резльтат: {past_result}', reply_markup=kb.main)
