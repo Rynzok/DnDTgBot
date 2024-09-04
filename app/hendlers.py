@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
 from help import manual
 from domain.heros import create_characteristic
-from domain.alias import calculation_dice
+from domain.alias import calculation_dice, alias_release, create_alias, alias_read_db
 import app.keyboards as kb
 from math import ceil
 
@@ -12,7 +12,7 @@ past_result = 0
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer('Привет')
+    await message.answer(f'Привет \n id чата: {message.chat.id}\n Название группы: {message.chat.full_name}')
 
 
 @router.message(Command('help'))
@@ -23,7 +23,7 @@ async def get_help(message: Message):
 @router.message(F.text)
 async def get_cast(message: Message):
     if message.text.lower()[0] == '/':
-
+        global past_result
         msg = message.text.lower()[1::]
 
         # Создание 6 характеристик персонажа методом броска 4 кубиков
@@ -31,34 +31,34 @@ async def get_cast(message: Message):
             await message.answer(create_characteristic())
 
         # Оброботка всех бросков кубика
-        elif str(msg).find('d') != -1:
-            global past_result
-            text, past_result = calculation_dice(msg)
+        elif msg.find('d') != -1 and msg.find('al') == -1:
 
+            text, past_result = calculation_dice(msg)
             await message.answer(text, reply_markup=kb.main)
 
-        # # Получение списка всез Алиасов
-        # elif msg == 'alias' or msg == 'алиасы' or msg == 'al' or msg == 'ал':
-        #     send_some_msg(id, f"{name}, {alias_read_db()}")
-        #
+        # Получение списка всез Алиасов
+        elif msg == 'alias' or msg == 'алиасы' or msg == 'al' or msg == 'ал':
+            try:
+                await message.answer(f"{alias_read_db()}")
+            except Exception:
+                await message.answer(f"Возможно список пуст")
+
         # # Удаление Алиаса
         # elif str(msg).find('del') != -1:
         #     send_some_msg(id, f"{name}, {alis_del_db(msg)}")
         #
-        # # Работа с Алиасами
-        # elif str(msg).find('al') != -1 or str(msg).find('ал') != -1 and str(msg).find('del') == -1:
-        #     try:
-        #         # Создание Алиаса
-        #         if len(str(msg).split()) > 2:
-        #             send_some_msg(id, f"{name}, {create_alias(msg)}")
-        #         # Активация Алиаса
-        #         else:
-        #             send_some_msg(id, f"{name}, {alias_release(msg)}")
-        #     except:
-        #         send_some_msg(id, f"{name}, Где-то есть ошибка")
-        #
-        # else:
-        #     send_some_msg(id, f"{name}, Не попало в ifы")
+        # Работа с Алиасами
+        elif msg.find('al') != -1 and msg.find('del') == -1:
+            # Создание Алиаса
+                if len(msg.split()) > 2:
+                    text, past_result = create_alias(msg, message.chat.id)
+                    await message.answer(f"{text}", reply_markup=kb.main)
+                # Активация Алиаса
+                else:
+                    text, past_result = alias_release(msg)
+                    await message.answer(f"{text}", reply_markup=kb.main)
+        else:
+            await message.answer('Что-то пошло не так')
 
     # await message.answer(f'У меня всё хорошо')
 

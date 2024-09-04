@@ -1,12 +1,20 @@
 import sqlite3
 
 
-def write_to_db(name, command, list_cast):
+def write_to_db(name, command, list_cast, group_url):
     connection = sqlite3.connect('my_database.db')
     cursor = connection.cursor()
 
+    cursor.execute("CREATE TABLE IF NOT EXISTS Groups("
+                   "id INTEGER PRIMARY KEY,"
+                   "Group_url INTEGER NOT NULL)")
+
     cursor.execute("CREATE TABLE IF NOT EXISTS Alias "
-                   "(id INTEGER PRIMARY KEY,name TEXT NOT NULL UNIQUE, command TEXT NOT NULL)")
+                   "(id INTEGER PRIMARY KEY,"
+                   "name TEXT NOT NULL UNIQUE,"
+                   "command TEXT NOT NULL,"
+                   "Group_id INTEGER NOT NULL,"
+                   "FOREIGN KEY (Group_id) REFERENCES Groups (id))")
 
     cursor.execute("CREATE TABLE IF NOT EXISTS Casts ("
                    "id INTEGER PRIMARY KEY,"
@@ -19,7 +27,13 @@ def write_to_db(name, command, list_cast):
                    "Alias_id INTEGER NOT NULL,"
                    "FOREIGN KEY (Alias_id) REFERENCES Alias (id))")
 
-    cursor.execute("INSERT INTO Alias (name, command) VALUES (?, ?)", (name, command))
+    cursor.execute("INSERT INTO Groups (Group_url) VALUES (?)", (group_url,))
+
+    cursor.execute("SELECT LAST_INSERT_ROWID()")
+    group_id = cursor.fetchone()
+
+    cursor.execute("INSERT INTO Alias (name, command, Group_id) VALUES (?, ?, ?)", (name, command, group_id[0]))
+
     cursor.execute("SELECT LAST_INSERT_ROWID()")
     alias_id = cursor.fetchone()
     for cast in list_cast:
