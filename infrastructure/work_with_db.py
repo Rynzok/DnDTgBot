@@ -76,13 +76,17 @@ def alias_all_read_db(chat_id):
     return list_alias
 
 
-def alis_del_db(string):
+def alis_del_db(string, chat_id):
     list_string = string.split()
     connection = sqlite3.connect('my_database.db')
     cursor = connection.cursor()
-    cursor.execute("SELECT id FROM Alias WHERE name = ?", [list_string[1]])
+
+    cursor.execute("SELECT id FROM Groups WHERE Group_url = ?", (chat_id,))
+    group_id = cursor.fetchone()[0]
+
+    cursor.execute("SELECT id FROM Alias WHERE name = ? AND Group_id = ?", [list_string[1], group_id])
     alias_id = cursor.fetchone()
-    cursor.execute("DELETE FROM Alias WHERE name = ?", [list_string[1]])
+    cursor.execute("DELETE FROM Alias WHERE name = ? AND Group_id = ?", [list_string[1], group_id])
     cursor.execute("DELETE FROM Casts WHERE Alias_id = ?", [alias_id[0]])
     connection.commit()
     connection.close()

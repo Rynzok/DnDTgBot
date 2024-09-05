@@ -1,11 +1,13 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
+
 from help import manual
 from domain.heros import create_characteristic
 from domain.alias import calculation_dice, alias_release, create_alias, alias_read_db
 import app.keyboards as kb
 from math import ceil
+from infrastructure.work_with_db import alis_del_db
 
 router = Router()
 past_result = 0
@@ -40,10 +42,14 @@ async def get_cast(message: Message):
         elif msg == 'alias' or msg == 'алиасы' or msg == 'al' or msg == 'ал':
             await message.answer(f"{alias_read_db(message.chat.id)}")
 
-        # # Удаление Алиаса
-        # elif str(msg).find('del') != -1:
-        #     send_some_msg(id, f"{name}, {alis_del_db(msg)}")
-        #
+        # Удаление Алиаса
+        elif str(msg).find('del') != -1:
+            try:
+                text = alis_del_db(msg, message.chat.id)
+            except Exception:
+                text = "Неверное имя Алиаса либо ещё что-то пошло не так"
+            await message.answer(f"{text}")
+
         # Работа с Алиасами
         elif msg.find('al') != -1 and msg.find('del') == -1:
             # Создание Алиаса
@@ -52,7 +58,11 @@ async def get_cast(message: Message):
                     await message.answer(f"{text}", reply_markup=kb.main)
                 # Активация Алиаса
                 else:
-                    text, past_result = alias_release(msg, message.chat.id)
+                    try:
+                        text, past_result = alias_release(msg, message.chat.id)
+                    except Exception:
+                        text = "Неверное имя Алиаса либо другая ошибка"
+                        past_result = 0
                     await message.answer(f"{text}", reply_markup=kb.main)
         else:
             await message.answer('Что-то пошло не так')
