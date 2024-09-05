@@ -11,7 +11,7 @@ def write_to_db(name, command, list_cast, group_url):
 
     cursor.execute("CREATE TABLE IF NOT EXISTS Alias "
                    "(id INTEGER PRIMARY KEY,"
-                   "name TEXT NOT NULL UNIQUE,"
+                   "name TEXT NOT NULL,"
                    "command TEXT NOT NULL,"
                    "Group_id INTEGER NOT NULL,"
                    "FOREIGN KEY (Group_id) REFERENCES Groups (id))")
@@ -27,12 +27,17 @@ def write_to_db(name, command, list_cast, group_url):
                    "Alias_id INTEGER NOT NULL,"
                    "FOREIGN KEY (Alias_id) REFERENCES Alias (id))")
 
-    cursor.execute("INSERT INTO Groups (Group_url) VALUES (?)", (group_url,))
-
-    cursor.execute("SELECT LAST_INSERT_ROWID()")
+    cursor.execute("SELECT id FROM Groups WHERE Group_url = ?", (group_url,))
     group_id = cursor.fetchone()
 
-    cursor.execute("INSERT INTO Alias (name, command, Group_id) VALUES (?, ?, ?)", (name, command, group_id[0]))
+    if group_id is None:
+        cursor.execute("INSERT INTO Groups (Group_url) VALUES (?)", (group_url,))
+        cursor.execute("SELECT LAST_INSERT_ROWID()")
+        group_id = cursor.fetchone()[0]
+    else:
+        group_id = group_id[0]
+
+    cursor.execute("INSERT INTO Alias (name, command, Group_id) VALUES (?, ?, ?)", (name, command, group_id))
 
     cursor.execute("SELECT LAST_INSERT_ROWID()")
     alias_id = cursor.fetchone()
@@ -46,10 +51,12 @@ def write_to_db(name, command, list_cast, group_url):
     connection.close()
 
 
-def casts_read_from_db(name):
+def casts_read_from_db(name, chat_id):
     connection = sqlite3.connect('my_database.db')
     cursor = connection.cursor()
-    cursor.execute("SELECT id, command FROM Alias WHERE name = ?", [name])
+    cursor.execute("SELECT id FROM Groups WHERE Group_url = ?", (chat_id,))
+    group_id = cursor.fetchone()[0]
+    cursor.execute("SELECT id, command FROM Alias WHERE name = ? AND Group_id = ?", [name, group_id])
     alias_id = cursor.fetchone()
     command = alias_id[1]
     cursor.execute("SELECT * FROM Casts WHERE Alias_id = ?", [alias_id[0]])
@@ -58,10 +65,12 @@ def casts_read_from_db(name):
     return list_string, command
 
 
-def alias_all_read_db():
+def alias_all_read_db(chat_id):
     connection = sqlite3.connect('my_database.db')
     cursor = connection.cursor()
-    cursor.execute("SELECT name, command FROM Alias")
+    cursor.execute("SELECT id FROM Groups WHERE Group_url = ?", (chat_id,))
+    group_id = cursor.fetchone()
+    cursor.execute("SELECT name, command FROM Alias WHERE Group_id = ?", (group_id[0],))
     list_alias = cursor.fetchall()
     connection.close()
     return list_alias

@@ -38,10 +38,7 @@ async def get_cast(message: Message):
 
         # Получение списка всез Алиасов
         elif msg == 'alias' or msg == 'алиасы' or msg == 'al' or msg == 'ал':
-            try:
-                await message.answer(f"{alias_read_db()}")
-            except Exception:
-                await message.answer(f"Возможно список пуст")
+            await message.answer(f"{alias_read_db(message.chat.id)}")
 
         # # Удаление Алиаса
         # elif str(msg).find('del') != -1:
@@ -55,7 +52,7 @@ async def get_cast(message: Message):
                     await message.answer(f"{text}", reply_markup=kb.main)
                 # Активация Алиаса
                 else:
-                    text, past_result = alias_release(msg)
+                    text, past_result = alias_release(msg, message.chat.id)
                     await message.answer(f"{text}", reply_markup=kb.main)
         else:
             await message.answer('Что-то пошло не так')

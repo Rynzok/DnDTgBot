@@ -17,8 +17,8 @@ class Alias:
             command.create_from_string()
             self.list_cast.append(command)
 
-    def create_from_db(self, name):
-        list_string, string = casts_read_from_db(name)
+    def create_from_db(self, name, chat_id):
+        list_string, string = casts_read_from_db(name, chat_id)
         self.string = string
         for string in list_string:
             command = Cast(string[1])
@@ -51,10 +51,10 @@ def calculation_dice(string):
     return text_box, res
 
 
-def alias_release(string):
+def alias_release(string, chat_id):
     list_string = string.split()
     command = Alias()
-    command.create_from_db(list_string[1])
+    command.create_from_db(list_string[1], chat_id)
     text, res = command.sum()
     text_box = f"Алиас: {list_string[1]} ({command.string}) \n" + text
     return text_box, res
@@ -75,12 +75,16 @@ def create_alias(string, group_url):
     text_box, res = command.sum()
     return text_box, res
 
-def alias_read_db():
-    list_alias = alias_all_read_db()
-    text_box = []
-    for i in list_alias:
-        text_box.append(f"{i[0]}: {i[1]}")
-    some_text = " Список Алиасов: \n"
-    for i in text_box:
-        some_text += str(i) + "\n"
+def alias_read_db(chat_id):
+    try:
+        list_alias = alias_all_read_db(chat_id)
+        text_box = []
+        for i in list_alias:
+            text_box.append(f"{i[0]}: {i[1]}")
+        some_text = " Список Алиасов: \n"
+        for i in text_box:
+            some_text += str(i) + "\n"
+    except Exception:
+        some_text = "Пусто"
+
     return some_text
