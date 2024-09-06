@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, PollAnswer
 from aiogram.fsm.context import FSMContext
 
 from help import manual
@@ -33,7 +33,7 @@ async def create_hero_one(message: Message, state: FSMContext):
 async def create_hero_second(message: Message, state: FSMContext):
     await state.update_data(main = message.text)
     await state.set_state(CreateHero.characteristic)
-    await message.answer("Введите 6 значений характеристик персонажа в порядке: Сила, Ловкость, Толосложение"
+    await message.answer("Введите 6 значений характеристик персонажа в порядке: Сила, Ловкость, Толосложение, "
                          "Интеллект, Мурдость, Харизма \n"
                          "Пример: 16, 14, 15, 12, 10, 11")
 
@@ -45,10 +45,13 @@ async def create_hero_second(message: Message, state: FSMContext):
     await message.answer(f"Установите галочки в прокаченных навыках, а пока вы ввели: {data}")
     await message.answer_poll(question='Спасброски?',
                               options=['Сила', 'Ловкость', 'Телосложение', 'Интеллект', 'Мудрость', 'Харизма'],
-                              type='quiz',
-                              correct_option_id=1,
                               is_anonymous=False,
                               allows_multiple_answers=True)
+
+@router.poll_answer()
+async def poll_res(pa: PollAnswer):
+    chat_id = pa.user.id
+    await pa.bot.send_message(chat_id=chat_id, text=f"{pa.option_ids}, {pa.user.id}")
 
 
 @router.message(F.text)
