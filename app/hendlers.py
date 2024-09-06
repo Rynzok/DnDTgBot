@@ -1,6 +1,7 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.context import FSMContext
 
 from help import manual
 from domain.heros import create_characteristic
@@ -8,6 +9,7 @@ from domain.alias import calculation_dice, alias_release, create_alias, alias_re
 import app.keyboards as kb
 from math import ceil
 from infrastructure.work_with_db import alis_del_db
+from app.states import CreateHero
 
 router = Router()
 past_result = 0
@@ -20,6 +22,33 @@ async def cmd_start(message: Message):
 @router.message(Command('help'))
 async def get_help(message: Message):
     await message.answer(manual)
+
+@router.message(Command('create'))
+async def create_hero_one(message: Message, state: FSMContext):
+    await state.set_state(CreateHero.main)
+    await message.answer("Введите: Имя Песрнонажа, Класс, Расу, Уровень, Название предыстории, Мировозрение \n"
+                         "Пример: Лирой, Варвар, Полуорк, 4, Отшельник, Хаотично-злой")
+
+@router.message(CreateHero.main)
+async def create_hero_second(message: Message, state: FSMContext):
+    await state.update_data(main = message.text)
+    await state.set_state(CreateHero.characteristic)
+    await message.answer("Введите 6 значений характеристик персонажа в порядке: Сила, Ловкость, Толосложение"
+                         "Интеллект, Мурдость, Харизма \n"
+                         "Пример: 16, 14, 15, 12, 10, 11")
+
+@router.message(CreateHero.characteristic)
+async def create_hero_second(message: Message, state: FSMContext):
+    await state.update_data(characteristic = message.text)
+    await state.set_state(CreateHero.skill)
+    data = await state.get_data()
+    await message.answer(f"Установите галочки в прокаченных навыках, а пока вы ввели: {data}")
+    await message.answer_poll(question='Спасброски?',
+                              options=['Сила', 'Ловкость', 'Телосложение', 'Интеллект', 'Мудрость', 'Харизма'],
+                              type='quiz',
+                              correct_option_id=1,
+                              is_anonymous=False,
+                              allows_multiple_answers=True)
 
 
 @router.message(F.text)
